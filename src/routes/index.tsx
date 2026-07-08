@@ -50,10 +50,10 @@ function Landing() {
             Start free <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
-            to="/dashboard"
+            to="/auth"
             className="inline-flex items-center rounded-full border border-border bg-background px-6 py-3 text-sm font-medium text-foreground transition hover:bg-secondary"
           >
-            View demo
+            Sign in
           </Link>
         </div>
       </main>
