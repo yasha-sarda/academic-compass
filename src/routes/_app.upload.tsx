@@ -169,7 +169,7 @@ function UploadPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      {submitting && <ProcessingOverlay done={minWaitDone && false} />}
+      {submitting && <ProcessingOverlay done={minWaitDone} />}
       <h1 className="text-3xl font-semibold tracking-tight">New assignment</h1>
       <p className="mt-2 text-muted-foreground">
         Choose how you'd like to hand it to your copilot.

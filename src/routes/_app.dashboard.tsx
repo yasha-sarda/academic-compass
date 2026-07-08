@@ -47,7 +47,7 @@ function Dashboard() {
   });
 
   const assignments = query.data ?? [];
-  const active = assignments.filter((a) => a.status !== "done" && a.status !== "completed" as unknown as string || true);
+  const active = assignments;
   const recommended = [...active].sort((a, b) => scoreAssignment(b) - scoreAssignment(a))[0];
   const upcoming = [...active]
     .filter((a) => a.deadline)
