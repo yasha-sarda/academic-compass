@@ -48,38 +48,71 @@ export type Database = {
       }
       assignments: {
         Row: {
+          confidence: number | null
           created_at: string
           deadline: string | null
+          deliverables: string[] | null
           description: string | null
           difficulty: string | null
           estimated_hours: number | null
+          file_url: string | null
           id: string
+          notes: string | null
           priority: string | null
+          progress: number
+          reasoning: string | null
+          skills_required: string[] | null
+          source_text: string | null
+          source_type: string | null
           status: string
+          subject: string | null
+          summary: string | null
           title: string
           user_id: string
         }
         Insert: {
+          confidence?: number | null
           created_at?: string
           deadline?: string | null
+          deliverables?: string[] | null
           description?: string | null
           difficulty?: string | null
           estimated_hours?: number | null
+          file_url?: string | null
           id?: string
+          notes?: string | null
           priority?: string | null
+          progress?: number
+          reasoning?: string | null
+          skills_required?: string[] | null
+          source_text?: string | null
+          source_type?: string | null
           status?: string
+          subject?: string | null
+          summary?: string | null
           title: string
           user_id: string
         }
         Update: {
+          confidence?: number | null
           created_at?: string
           deadline?: string | null
+          deliverables?: string[] | null
           description?: string | null
           difficulty?: string | null
           estimated_hours?: number | null
+          file_url?: string | null
           id?: string
+          notes?: string | null
           priority?: string | null
+          progress?: number
+          reasoning?: string | null
+          skills_required?: string[] | null
+          source_text?: string | null
+          source_type?: string | null
           status?: string
+          subject?: string | null
+          summary?: string | null
           title?: string
           user_id?: string
         }
@@ -129,24 +162,33 @@ export type Database = {
           assignment_id: string
           completed: boolean
           created_at: string
+          description: string | null
           duration: number | null
+          estimated_time: string | null
           id: string
+          order_index: number
           step: string
         }
         Insert: {
           assignment_id: string
           completed?: boolean
           created_at?: string
+          description?: string | null
           duration?: number | null
+          estimated_time?: string | null
           id?: string
+          order_index?: number
           step: string
         }
         Update: {
           assignment_id?: string
           completed?: boolean
           created_at?: string
+          description?: string | null
           duration?: number | null
+          estimated_time?: string | null
           id?: string
+          order_index?: number
           step?: string
         }
         Relationships: [
