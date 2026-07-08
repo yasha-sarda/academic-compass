@@ -11,7 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppUploadRouteImport } from './routes/_app.upload'
+import { Route as AppRoadmapRouteImport } from './routes/_app.roadmap'
+import { Route as AppProfileRouteImport } from './routes/_app.profile'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppAnalysisRouteImport } from './routes/_app.analysis'
+import { Route as AppAssignmentsIndexRouteImport } from './routes/_app.assignments.index'
+import { Route as AppAssignmentsIdRouteImport } from './routes/_app.assignments.$id'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -23,38 +31,132 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppUploadRoute = AppUploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRoadmapRoute = AppRoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalysisRoute = AppAnalysisRouteImport.update({
+  id: '/analysis',
+  path: '/analysis',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssignmentsIndexRoute = AppAssignmentsIndexRouteImport.update({
+  id: '/assignments/',
+  path: '/assignments/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssignmentsIdRoute = AppAssignmentsIdRouteImport.update({
+  id: '/assignments/$id',
+  path: '/assignments/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/analysis': typeof AppAnalysisRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/profile': typeof AppProfileRoute
+  '/roadmap': typeof AppRoadmapRoute
+  '/upload': typeof AppUploadRoute
+  '/assignments/$id': typeof AppAssignmentsIdRoute
+  '/assignments/': typeof AppAssignmentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/analysis': typeof AppAnalysisRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/profile': typeof AppProfileRoute
+  '/roadmap': typeof AppRoadmapRoute
+  '/upload': typeof AppUploadRoute
+  '/assignments/$id': typeof AppAssignmentsIdRoute
+  '/assignments': typeof AppAssignmentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/_app/analysis': typeof AppAnalysisRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/profile': typeof AppProfileRoute
+  '/_app/roadmap': typeof AppRoadmapRoute
+  '/_app/upload': typeof AppUploadRoute
+  '/_app/assignments/$id': typeof AppAssignmentsIdRoute
+  '/_app/assignments/': typeof AppAssignmentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/onboarding'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/analysis'
+    | '/dashboard'
+    | '/profile'
+    | '/roadmap'
+    | '/upload'
+    | '/assignments/$id'
+    | '/assignments/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/onboarding'
-  id: '__root__' | '/' | '/auth' | '/onboarding'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/analysis'
+    | '/dashboard'
+    | '/profile'
+    | '/roadmap'
+    | '/upload'
+    | '/assignments/$id'
+    | '/assignments'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/auth'
+    | '/onboarding'
+    | '/_app/analysis'
+    | '/_app/dashboard'
+    | '/_app/profile'
+    | '/_app/roadmap'
+    | '/_app/upload'
+    | '/_app/assignments/$id'
+    | '/_app/assignments/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
 }
@@ -75,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -82,11 +191,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/upload': {
+      id: '/_app/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof AppUploadRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/roadmap': {
+      id: '/_app/roadmap'
+      path: '/roadmap'
+      fullPath: '/roadmap'
+      preLoaderRoute: typeof AppRoadmapRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/analysis': {
+      id: '/_app/analysis'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof AppAnalysisRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assignments/': {
+      id: '/_app/assignments/'
+      path: '/assignments'
+      fullPath: '/assignments/'
+      preLoaderRoute: typeof AppAssignmentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assignments/$id': {
+      id: '/_app/assignments/$id'
+      path: '/assignments/$id'
+      fullPath: '/assignments/$id'
+      preLoaderRoute: typeof AppAssignmentsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAnalysisRoute: typeof AppAnalysisRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppProfileRoute: typeof AppProfileRoute
+  AppRoadmapRoute: typeof AppRoadmapRoute
+  AppUploadRoute: typeof AppUploadRoute
+  AppAssignmentsIdRoute: typeof AppAssignmentsIdRoute
+  AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAnalysisRoute: AppAnalysisRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppProfileRoute: AppProfileRoute,
+  AppRoadmapRoute: AppRoadmapRoute,
+  AppUploadRoute: AppUploadRoute,
+  AppAssignmentsIdRoute: AppAssignmentsIdRoute,
+  AppAssignmentsIndexRoute: AppAssignmentsIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
 }
