@@ -14,7 +14,151 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_logs: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          id: string
+          prompt: string | null
+          response: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          prompt?: string | null
+          response?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          id?: string
+          prompt?: string | null
+          response?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_logs_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignments: {
+        Row: {
+          created_at: string
+          deadline: string | null
+          description: string | null
+          difficulty: string | null
+          estimated_hours: number | null
+          id: string
+          priority: string | null
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          difficulty?: string | null
+          estimated_hours?: number | null
+          id?: string
+          priority?: string | null
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          difficulty?: string | null
+          estimated_hours?: number | null
+          id?: string
+          priority?: string | null
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          daily_study_hours: number | null
+          email: string | null
+          full_name: string | null
+          id: string
+          onboarding_completed: boolean
+          preferred_study_time: string | null
+          semester: string | null
+          subjects: string[] | null
+          university: string | null
+        }
+        Insert: {
+          created_at?: string
+          daily_study_hours?: number | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          onboarding_completed?: boolean
+          preferred_study_time?: string | null
+          semester?: string | null
+          subjects?: string[] | null
+          university?: string | null
+        }
+        Update: {
+          created_at?: string
+          daily_study_hours?: number | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          onboarding_completed?: boolean
+          preferred_study_time?: string | null
+          semester?: string | null
+          subjects?: string[] | null
+          university?: string | null
+        }
+        Relationships: []
+      }
+      roadmaps: {
+        Row: {
+          assignment_id: string
+          completed: boolean
+          created_at: string
+          duration: number | null
+          id: string
+          step: string
+        }
+        Insert: {
+          assignment_id: string
+          completed?: boolean
+          created_at?: string
+          duration?: number | null
+          id?: string
+          step: string
+        }
+        Update: {
+          assignment_id?: string
+          completed?: boolean
+          created_at?: string
+          duration?: number | null
+          id?: string
+          step?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmaps_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
