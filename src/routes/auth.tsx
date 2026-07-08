@@ -15,7 +15,8 @@ export const Route = createFileRoute("/auth")({
         .select("onboarding_completed")
         .eq("id", data.user.id)
         .maybeSingle();
-      throw redirect({ to: profile?.onboarding_completed ? "/dashboard" : "/onboarding" });
+      if (profile?.onboarding_completed) throw redirect({ to: "/dashboard" });
+      throw redirect({ to: "/onboarding" });
     }
   },
   head: () => ({
@@ -41,10 +42,11 @@ function AuthPage() {
       .select("onboarding_completed")
       .eq("id", userId)
       .maybeSingle();
-    navigate({
-      to: profile?.onboarding_completed ? "/dashboard" : "/onboarding",
-      replace: true,
-    });
+    if (profile?.onboarding_completed) {
+      navigate({ to: "/dashboard", replace: true });
+    } else {
+      navigate({ to: "/onboarding", replace: true });
+    }
   }
 
   async function handleEmail(e: React.FormEvent) {
