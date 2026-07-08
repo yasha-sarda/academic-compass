@@ -1,4 +1,11 @@
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  redirect,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import {
   Sparkles,
   LayoutDashboard,
@@ -7,10 +14,27 @@ import {
   Map,
   User,
   FileText,
+  LogOut,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app")({
+  ssr: false,
+  beforeLoad: async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      throw redirect({ to: "/" });
+    }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+    if (!profile?.onboarding_completed) {
+      throw redirect({ to: "/onboarding" });
+    }
+  },
   component: AppShell,
 });
 
@@ -31,6 +55,12 @@ const NAV: NavItem[] = [
 
 function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/", replace: true });
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,12 +93,13 @@ function AppShell() {
             })}
           </nav>
 
-          <Link
-            to="/"
-            className="mt-4 rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition hover:text-foreground"
+          <button
+            onClick={handleSignOut}
+            className="mt-4 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
           >
-            ← Back to site
-          </Link>
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
         </aside>
 
         <main className="min-h-screen flex-1 px-6 py-10 md:px-12">
