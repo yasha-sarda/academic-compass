@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Compass, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -11,9 +11,9 @@ function Landing() {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Sparkles className="h-4 w-4" />
+            <Compass className="h-4 w-4" />
           </div>
-          <span className="text-sm font-semibold tracking-tight">Academic Copilot</span>
+          <span className="text-sm font-semibold tracking-tight">Academic Compass</span>
         </div>
         <nav className="flex items-center gap-6 text-sm">
           <Link to="/auth" className="text-muted-foreground transition hover:text-foreground">
@@ -31,16 +31,15 @@ function Landing() {
       <main className="mx-auto max-w-3xl px-6 pt-24 pb-32 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-          AI-powered study copilot
+          Your AI-first academic operating system
         </div>
         <h1 className="mt-8 text-5xl font-semibold tracking-tight sm:text-6xl">
-          Beat procrastination.
+          Stop guessing.
           <br />
-          <span className="text-muted-foreground">Know the next best step.</span>
+          <span className="text-muted-foreground">Know your next best step.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-          Academic Copilot analyzes your assignments, estimates real effort, and
-          generates a personalized roadmap so you always know exactly what to do next.
+          Academic Compass analyzes your assignments, estimates real effort, and — through Compass, your AI companion — tells you exactly what to work on right now, and why.
         </p>
         <div className="mt-10 flex items-center justify-center gap-3">
           <Link

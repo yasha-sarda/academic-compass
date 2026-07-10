@@ -7,13 +7,13 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import {
-  Sparkles,
+  Compass,
   LayoutDashboard,
-  Upload,
-  Brain,
   Map,
   User,
   FileText,
+  MessageSquare,
+  Settings as SettingsIcon,
   LogOut,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -23,34 +23,30 @@ export const Route = createFileRoute("/_app")({
   ssr: false,
   beforeLoad: async () => {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      throw redirect({ to: "/" });
-    }
+    if (!userData.user) throw redirect({ to: "/" });
     const { data: profile } = await supabase
       .from("profiles")
       .select("onboarding_completed")
       .eq("id", userData.user.id)
       .maybeSingle();
-    if (!profile?.onboarding_completed) {
-      throw redirect({ to: "/onboarding" });
-    }
+    if (!profile?.onboarding_completed) throw redirect({ to: "/onboarding" });
   },
   component: AppShell,
 });
 
 type NavItem = {
-  to: "/dashboard" | "/upload" | "/analysis" | "/assignments" | "/roadmap" | "/profile";
+  to: "/dashboard" | "/assignments" | "/roadmaps" | "/compass" | "/profile" | "/settings";
   label: string;
   icon: ComponentType<{ className?: string }>;
 };
 
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/upload", label: "Upload", icon: Upload },
-  { to: "/analysis", label: "AI Analysis", icon: Brain },
   { to: "/assignments", label: "Assignments", icon: FileText },
-  { to: "/roadmap", label: "Roadmap", icon: Map },
+  { to: "/roadmaps", label: "Roadmaps", icon: Map },
+  { to: "/compass", label: "Compass", icon: MessageSquare },
   { to: "/profile", label: "Profile", icon: User },
+  { to: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 function AppShell() {
@@ -68,9 +64,9 @@ function AppShell() {
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border px-4 py-6 md:flex">
           <Link to="/dashboard" className="mb-8 flex items-center gap-2 px-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Sparkles className="h-3.5 w-3.5" />
+              <Compass className="h-3.5 w-3.5" />
             </div>
-            <span className="text-sm font-semibold tracking-tight">Copilot</span>
+            <span className="text-sm font-semibold tracking-tight">Academic Compass</span>
           </Link>
 
           <nav className="flex flex-1 flex-col gap-0.5">
@@ -102,9 +98,38 @@ function AppShell() {
           </button>
         </aside>
 
-        <main className="min-h-screen flex-1 px-6 py-10 md:px-12">
+        {/* Mobile top nav */}
+        <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur md:hidden">
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <Compass className="h-3.5 w-3.5" />
+            </div>
+            <span className="text-sm font-semibold tracking-tight">Academic Compass</span>
+          </Link>
+        </div>
+
+        <main className="min-h-screen flex-1 px-6 pb-24 pt-20 md:px-12 md:pt-10">
           <Outlet />
         </main>
+
+        {/* Mobile bottom nav */}
+        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-border bg-background/95 px-2 py-2 backdrop-blur md:hidden">
+          {NAV.slice(0, 5).map(({ to, label, icon: Icon }) => {
+            const active = pathname === to || pathname.startsWith(`${to}/`);
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={`flex flex-col items-center gap-0.5 rounded-md px-2 py-1 text-[10px] ${
+                  active ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
