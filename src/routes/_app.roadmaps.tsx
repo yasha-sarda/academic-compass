@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Map } from "lucide-react";
 
-export const Route = createFileRoute("/_app/roadmap")({
+export const Route = createFileRoute("/_app/roadmaps")({
   head: () => ({ meta: [{ title: "Roadmap — Academic Copilot" }] }),
   component: RoadmapPage,
 });
