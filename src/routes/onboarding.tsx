@@ -18,10 +18,10 @@ export const Route = createFileRoute("/onboarding")({
   },
   head: () => ({
     meta: [
-      { title: "Onboarding — Academic Copilot" },
+      { title: "Onboarding — Academic Compass" },
       {
         name: "description",
-        content: "Tell your copilot about your studies to personalize your roadmap.",
+        content: "Tell your Compass about your studies to personalize your roadmap.",
       },
     ],
   }),
@@ -108,7 +108,7 @@ function OnboardingPage() {
         {step === 1 && (
           <>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-              Welcome to your Copilot
+              Welcome to Academic Compass
             </h1>
             <p className="mt-2 text-muted-foreground">
               Let's get to know you so recommendations feel personal.
