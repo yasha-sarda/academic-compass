@@ -14,13 +14,11 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppUploadRouteImport } from './routes/_app.upload'
-import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppRoadmapsRouteImport } from './routes/_app.roadmaps'
+import { Route as AppRoadmapRouteImport } from './routes/_app.roadmap'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
-import { Route as AppCompassIndexRouteImport } from './routes/_app.compass.index'
+import { Route as AppAnalysisRouteImport } from './routes/_app.analysis'
 import { Route as AppAssignmentsIndexRouteImport } from './routes/_app.assignments.index'
-import { Route as AppCompassChatIdRouteImport } from './routes/_app.compass.$chatId'
 import { Route as AppAssignmentsIdRouteImport } from './routes/_app.assignments.$id'
 
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -47,14 +45,9 @@ const AppUploadRoute = AppUploadRouteImport.update({
   path: '/upload',
   getParentRoute: () => AppRoute,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRoadmapsRoute = AppRoadmapsRouteImport.update({
-  id: '/roadmaps',
-  path: '/roadmaps',
+const AppRoadmapRoute = AppRoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
@@ -67,19 +60,14 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCompassIndexRoute = AppCompassIndexRouteImport.update({
-  id: '/compass/',
-  path: '/compass/',
+const AppAnalysisRoute = AppAnalysisRouteImport.update({
+  id: '/analysis',
+  path: '/analysis',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAssignmentsIndexRoute = AppAssignmentsIndexRouteImport.update({
   id: '/assignments/',
   path: '/assignments/',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCompassChatIdRoute = AppCompassChatIdRouteImport.update({
-  id: '/compass/$chatId',
-  path: '/compass/$chatId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAssignmentsIdRoute = AppAssignmentsIdRouteImport.update({
@@ -92,29 +80,25 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/analysis': typeof AppAnalysisRoute
   '/dashboard': typeof AppDashboardRoute
   '/profile': typeof AppProfileRoute
-  '/roadmaps': typeof AppRoadmapsRoute
-  '/settings': typeof AppSettingsRoute
+  '/roadmap': typeof AppRoadmapRoute
   '/upload': typeof AppUploadRoute
   '/assignments/$id': typeof AppAssignmentsIdRoute
-  '/compass/$chatId': typeof AppCompassChatIdRoute
   '/assignments/': typeof AppAssignmentsIndexRoute
-  '/compass/': typeof AppCompassIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/analysis': typeof AppAnalysisRoute
   '/dashboard': typeof AppDashboardRoute
   '/profile': typeof AppProfileRoute
-  '/roadmaps': typeof AppRoadmapsRoute
-  '/settings': typeof AppSettingsRoute
+  '/roadmap': typeof AppRoadmapRoute
   '/upload': typeof AppUploadRoute
   '/assignments/$id': typeof AppAssignmentsIdRoute
-  '/compass/$chatId': typeof AppCompassChatIdRoute
   '/assignments': typeof AppAssignmentsIndexRoute
-  '/compass': typeof AppCompassIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,15 +106,13 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/_app/analysis': typeof AppAnalysisRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/profile': typeof AppProfileRoute
-  '/_app/roadmaps': typeof AppRoadmapsRoute
-  '/_app/settings': typeof AppSettingsRoute
+  '/_app/roadmap': typeof AppRoadmapRoute
   '/_app/upload': typeof AppUploadRoute
   '/_app/assignments/$id': typeof AppAssignmentsIdRoute
-  '/_app/compass/$chatId': typeof AppCompassChatIdRoute
   '/_app/assignments/': typeof AppAssignmentsIndexRoute
-  '/_app/compass/': typeof AppCompassIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -138,44 +120,38 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/onboarding'
+    | '/analysis'
     | '/dashboard'
     | '/profile'
-    | '/roadmaps'
-    | '/settings'
+    | '/roadmap'
     | '/upload'
     | '/assignments/$id'
-    | '/compass/$chatId'
     | '/assignments/'
-    | '/compass/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/onboarding'
+    | '/analysis'
     | '/dashboard'
     | '/profile'
-    | '/roadmaps'
-    | '/settings'
+    | '/roadmap'
     | '/upload'
     | '/assignments/$id'
-    | '/compass/$chatId'
     | '/assignments'
-    | '/compass'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/auth'
     | '/onboarding'
+    | '/_app/analysis'
     | '/_app/dashboard'
     | '/_app/profile'
-    | '/_app/roadmaps'
-    | '/_app/settings'
+    | '/_app/roadmap'
     | '/_app/upload'
     | '/_app/assignments/$id'
-    | '/_app/compass/$chatId'
     | '/_app/assignments/'
-    | '/_app/compass/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -222,18 +198,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppUploadRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/roadmaps': {
-      id: '/_app/roadmaps'
-      path: '/roadmaps'
-      fullPath: '/roadmaps'
-      preLoaderRoute: typeof AppRoadmapsRouteImport
+    '/_app/roadmap': {
+      id: '/_app/roadmap'
+      path: '/roadmap'
+      fullPath: '/roadmap'
+      preLoaderRoute: typeof AppRoadmapRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/profile': {
@@ -250,11 +219,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/compass/': {
-      id: '/_app/compass/'
-      path: '/compass'
-      fullPath: '/compass/'
-      preLoaderRoute: typeof AppCompassIndexRouteImport
+    '/_app/analysis': {
+      id: '/_app/analysis'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof AppAnalysisRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/assignments/': {
@@ -262,13 +231,6 @@ declare module '@tanstack/react-router' {
       path: '/assignments'
       fullPath: '/assignments/'
       preLoaderRoute: typeof AppAssignmentsIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/compass/$chatId': {
-      id: '/_app/compass/$chatId'
-      path: '/compass/$chatId'
-      fullPath: '/compass/$chatId'
-      preLoaderRoute: typeof AppCompassChatIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/assignments/$id': {
@@ -282,27 +244,23 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAnalysisRoute: typeof AppAnalysisRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppProfileRoute: typeof AppProfileRoute
-  AppRoadmapsRoute: typeof AppRoadmapsRoute
-  AppSettingsRoute: typeof AppSettingsRoute
+  AppRoadmapRoute: typeof AppRoadmapRoute
   AppUploadRoute: typeof AppUploadRoute
   AppAssignmentsIdRoute: typeof AppAssignmentsIdRoute
-  AppCompassChatIdRoute: typeof AppCompassChatIdRoute
   AppAssignmentsIndexRoute: typeof AppAssignmentsIndexRoute
-  AppCompassIndexRoute: typeof AppCompassIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAnalysisRoute: AppAnalysisRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppProfileRoute: AppProfileRoute,
-  AppRoadmapsRoute: AppRoadmapsRoute,
-  AppSettingsRoute: AppSettingsRoute,
+  AppRoadmapRoute: AppRoadmapRoute,
   AppUploadRoute: AppUploadRoute,
   AppAssignmentsIdRoute: AppAssignmentsIdRoute,
-  AppCompassChatIdRoute: AppCompassChatIdRoute,
   AppAssignmentsIndexRoute: AppAssignmentsIndexRoute,
-  AppCompassIndexRoute: AppCompassIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

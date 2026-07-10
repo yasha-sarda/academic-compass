@@ -13,7 +13,6 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeProvider } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -80,10 +79,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Academic Compass — Your AI-first academic operating system" },
-      { name: "description", content: "Academic Compass helps university students beat decision paralysis by telling them exactly what to work on next." },
-      { property: "og:title", content: "Academic Compass" },
-      { property: "og:description", content: "The AI-first academic operating system that recommends your next best step." },
+      { title: "AI Academic Copilot — Beat procrastination with an AI study partner" },
+      { name: "description", content: "AI Academic Copilot analyzes assignments, estimates effort, and generates personalized study roadmaps for university students." },
+      { property: "og:title", content: "AI Academic Copilot" },
+      { property: "og:description", content: "An intelligent copilot that recommends your best next study step." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -129,11 +128,9 @@ function RootComponent() {
   }, [router]);
 
   return (
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <Outlet />
-        <Toaster position="top-center" richColors />
-      </QueryClientProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <Outlet />
+      <Toaster position="top-center" richColors />
+    </QueryClientProvider>
   );
 }

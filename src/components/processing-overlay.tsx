@@ -28,7 +28,7 @@ export function ProcessingOverlay({ done }: { done: boolean }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-lg">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          <Sparkles className="h-3.5 w-3.5 text-primary" /> AI Compass
+          <Sparkles className="h-3.5 w-3.5 text-primary" /> AI copilot
         </div>
         <h2 className="mt-3 text-xl font-semibold tracking-tight">Analyzing your assignment</h2>
         <p className="mt-1 text-sm text-muted-foreground">

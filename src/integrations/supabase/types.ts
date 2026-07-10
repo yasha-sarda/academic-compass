@@ -48,7 +48,6 @@ export type Database = {
       }
       assignments: {
         Row: {
-          archived_at: string | null
           confidence: number | null
           created_at: string
           deadline: string | null
@@ -68,12 +67,10 @@ export type Database = {
           status: string
           subject: string | null
           summary: string | null
-          tags: string[]
           title: string
           user_id: string
         }
         Insert: {
-          archived_at?: string | null
           confidence?: number | null
           created_at?: string
           deadline?: string | null
@@ -93,12 +90,10 @@ export type Database = {
           status?: string
           subject?: string | null
           summary?: string | null
-          tags?: string[]
           title: string
           user_id: string
         }
         Update: {
-          archived_at?: string | null
           confidence?: number | null
           created_at?: string
           deadline?: string | null
@@ -118,78 +113,10 @@ export type Database = {
           status?: string
           subject?: string | null
           summary?: string | null
-          tags?: string[]
           title?: string
           user_id?: string
         }
         Relationships: []
-      }
-      chat_messages: {
-        Row: {
-          chat_id: string
-          content: string
-          created_at: string
-          id: string
-          role: string
-        }
-        Insert: {
-          chat_id: string
-          content: string
-          created_at?: string
-          id?: string
-          role: string
-        }
-        Update: {
-          chat_id?: string
-          content?: string
-          created_at?: string
-          id?: string
-          role?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_messages_chat_id_fkey"
-            columns: ["chat_id"]
-            isOneToOne: false
-            referencedRelation: "chats"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chats: {
-        Row: {
-          assignment_id: string | null
-          created_at: string
-          id: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          assignment_id?: string | null
-          created_at?: string
-          id?: string
-          title?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          assignment_id?: string | null
-          created_at?: string
-          id?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chats_assignment_id_fkey"
-            columns: ["assignment_id"]
-            isOneToOne: false
-            referencedRelation: "assignments"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       profiles: {
         Row: {
