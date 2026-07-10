@@ -1,36 +1,55 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowDown, ArrowLeft, Brain, Clock, Sparkles, Target, Zap } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { updateAssignment, setArchive, deleteAssignment } from "@/lib/assignments.functions";
+import { createChat } from "@/lib/compass.functions";
+import { ArrowLeft, Brain, Clock, Compass, Edit, Target, Zap, Map, Archive, Trash2, MessageSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_app/assignments/$id")({
-  head: () => ({ meta: [{ title: "Assignment — Academic Copilot" }] }),
+  head: () => ({ meta: [{ title: "Assignment — Academic Compass" }] }),
   component: AssignmentDetail,
 });
 
-function priorityTone(p: string | null | undefined) {
-  if (p === "High") return "bg-red-50 text-red-700 border-red-200";
-  if (p === "Medium") return "bg-amber-50 text-amber-700 border-amber-200";
-  return "bg-emerald-50 text-emerald-700 border-emerald-200";
-}
-function difficultyTone(d: string | null | undefined) {
-  if (d === "Hard") return "bg-purple-50 text-purple-700 border-purple-200";
-  if (d === "Medium") return "bg-blue-50 text-blue-700 border-blue-200";
-  return "bg-slate-100 text-slate-700 border-slate-200";
-}
-
 function AssignmentDetail() {
   const { id } = Route.useParams();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const update = useServerFn(updateAssignment);
+  const archive = useServerFn(setArchive);
+  const del = useServerFn(deleteAssignment);
+  const newChat = useServerFn(createChat);
+
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   const query = useQuery({
     queryKey: ["assignment", id],
     queryFn: async () => {
-      const [{ data: a, error: ae }, { data: m, error: me }] = await Promise.all([
+      const [{ data: a }, { data: m }] = await Promise.all([
         supabase.from("assignments").select("*").eq("id", id).maybeSingle(),
         supabase.from("roadmaps").select("*").eq("assignment_id", id).order("order_index"),
       ]);
-      if (ae) throw ae;
-      if (me) throw me;
       return { assignment: a, milestones: m ?? [] };
     },
   });
@@ -44,7 +63,6 @@ function AssignmentDetail() {
       </div>
     );
   }
-
   const a = query.data?.assignment;
   if (!a) {
     return (
@@ -56,126 +74,178 @@ function AssignmentDetail() {
       </div>
     );
   }
-
   const milestones = query.data!.milestones;
   const deliverables = (a.deliverables ?? []) as string[];
   const skills = (a.skills_required ?? []) as string[];
+  const tags = (a.tags ?? []) as string[];
+
+  async function askCompass() {
+    try {
+      const res = await newChat({ data: { assignment_id: id, title: `About: ${a!.title}` } });
+      navigate({ to: "/compass/$chatId", params: { chatId: res.id } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to start chat");
+    }
+  }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-4xl">
       <Link to="/assignments" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-3.5 w-3.5" /> All assignments
       </Link>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {a.subject && (
-          <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground">
-            {a.subject}
-          </span>
-        )}
-        <span className={`rounded-full border px-2.5 py-0.5 text-xs ${priorityTone(a.priority)}`}>
-          {a.priority ?? "Priority"} priority
-        </span>
-        <span className={`rounded-full border px-2.5 py-0.5 text-xs ${difficultyTone(a.difficulty)}`}>
-          {a.difficulty ?? "Difficulty"}
-        </span>
-      </div>
-
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight">{a.title}</h1>
-      {a.summary && <p className="mt-3 text-muted-foreground">{a.summary}</p>}
-
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <Stat icon={Clock} label="Estimated hours" value={a.estimated_hours ? `${a.estimated_hours}h` : "—"} />
-        <Stat icon={Target} label="Deadline" value={a.deadline ? new Date(a.deadline).toLocaleDateString() : "—"} />
-        <Stat icon={Zap} label="Confidence" value={a.confidence != null ? `${Math.round(Number(a.confidence) * 100)}%` : "—"} />
-      </div>
-
-      {a.reasoning && (
-        <section className="mt-6 rounded-2xl border border-border bg-card p-6">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            <Brain className="h-3.5 w-3.5 text-primary" /> Reasoning
+      <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_240px]">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            {a.subject && <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground">{a.subject}</span>}
+            <span className="rounded-full border border-border px-2.5 py-0.5 text-xs">{a.priority ?? "—"} priority</span>
+            <span className="rounded-full border border-border px-2.5 py-0.5 text-xs">{a.difficulty ?? "—"}</span>
+            {a.archived_at && <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">Archived</span>}
           </div>
-          <p className="mt-3 text-sm">{a.reasoning}</p>
-        </section>
-      )}
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">{a.title}</h1>
+          {a.summary && <p className="mt-3 text-muted-foreground">{a.summary}</p>}
 
-      {(deliverables.length > 0 || skills.length > 0) && (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {deliverables.length > 0 && (
-            <section className="rounded-2xl border border-border bg-card p-6">
-              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                Deliverables
-              </p>
-              <ul className="mt-3 space-y-2 text-sm">
-                {deliverables.map((d) => (
-                  <li key={d} className="flex items-start gap-2">
-                    <span className="mt-1.5 h-1 w-1 rounded-full bg-primary" /> {d}
-                  </li>
-                ))}
-              </ul>
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <Stat icon={Clock} label="Estimated" value={a.estimated_hours ? `${a.estimated_hours}h` : "—"} />
+            <Stat icon={Target} label="Deadline" value={a.deadline ? new Date(a.deadline).toLocaleDateString() : "—"} />
+            <Stat icon={Zap} label="Confidence" value={a.confidence != null ? `${Math.round(Number(a.confidence) * 100)}%` : "—"} />
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-border bg-card p-5">
+            <div className="flex items-center justify-between text-xs uppercase tracking-widest text-muted-foreground">
+              <span>Progress</span>
+              <span>{a.progress ?? 0}%</span>
+            </div>
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-full bg-primary transition-all" style={{ width: `${a.progress ?? 0}%` }} />
+            </div>
+          </div>
+
+          {a.reasoning && (
+            <section className="mt-6 rounded-2xl border border-border bg-card p-6">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                <Brain className="h-3.5 w-3.5 text-primary" /> Compass reasoning
+              </div>
+              <p className="mt-3 text-sm">{a.reasoning}</p>
             </section>
           )}
-          {skills.length > 0 && (
-            <section className="rounded-2xl border border-border bg-card p-6">
-              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                Skills required
-              </p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {skills.map((s) => (
-                  <span key={s} className="rounded-full bg-secondary px-2.5 py-1 text-xs">
-                    {s}
-                  </span>
-                ))}
+
+          {(deliverables.length > 0 || skills.length > 0 || tags.length > 0) && (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {deliverables.length > 0 && (
+                <section className="rounded-2xl border border-border bg-card p-6">
+                  <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Deliverables</p>
+                  <ul className="mt-3 space-y-2 text-sm">
+                    {deliverables.map((d) => <li key={d} className="flex items-start gap-2"><span className="mt-1.5 h-1 w-1 rounded-full bg-primary" /> {d}</li>)}
+                  </ul>
+                </section>
+              )}
+              {skills.length > 0 && (
+                <section className="rounded-2xl border border-border bg-card p-6">
+                  <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Skills</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {skills.map((s) => <span key={s} className="rounded-full bg-secondary px-2.5 py-1 text-xs">{s}</span>)}
+                  </div>
+                </section>
+              )}
+              {tags.length > 0 && (
+                <section className="rounded-2xl border border-border bg-card p-6 sm:col-span-2">
+                  <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Tags</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {tags.map((t) => <span key={t} className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">#{t}</span>)}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
+          {milestones.length > 0 && (
+            <section className="mt-6 rounded-2xl border border-border bg-card p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                  <Map className="h-3.5 w-3.5 text-primary" /> Roadmap preview
+                </div>
+                <Link to="/roadmaps" className="text-xs text-primary hover:underline">Open in Roadmaps</Link>
               </div>
+              <ol className="mt-4 space-y-2 text-sm">
+                {milestones.slice(0, 5).map((m) => (
+                  <li key={m.id} className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className={m.completed ? "line-through text-muted-foreground" : "font-medium"}>{m.step}</p>
+                      {m.description && <p className="text-xs text-muted-foreground">{m.description}</p>}
+                    </div>
+                    <span className="whitespace-nowrap rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{m.estimated_time ?? "—"}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
+          {a.notes && (
+            <section className="mt-6 rounded-2xl border border-border bg-card p-6">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Notes</p>
+              <p className="mt-3 text-sm">{a.notes}</p>
             </section>
           )}
         </div>
-      )}
 
-      {milestones.length > 0 && (
-        <section className="mt-6">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-primary" /> Roadmap
-          </div>
-          <div className="mt-4 space-y-3">
-            {milestones.map((m, i) => (
-              <div key={m.id}>
-                <div className="rounded-2xl border border-border bg-card p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-medium">{m.step}</p>
-                      {m.description && (
-                        <p className="mt-1 text-sm text-muted-foreground">{m.description}</p>
-                      )}
-                    </div>
-                    <span className="whitespace-nowrap rounded-full bg-secondary px-2.5 py-1 text-xs text-muted-foreground">
-                      {m.estimated_time ?? (m.duration ? `${m.duration} mins` : "—")}
-                    </span>
-                  </div>
-                </div>
-                {i < milestones.length - 1 && (
-                  <div className="flex justify-center py-1">
-                    <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        {/* Quick actions */}
+        <aside className="space-y-2 lg:sticky lg:top-6 lg:h-fit">
+          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Quick actions</p>
+          <ActionButton icon={Edit} label="Edit assignment" onClick={() => setEditing(true)} />
+          <ActionButton icon={Map} label="View roadmap" onClick={() => navigate({ to: "/roadmaps" })} />
+          <ActionButton icon={MessageSquare} label="Ask Compass" onClick={askCompass} highlight />
+          <ActionButton icon={Archive} label={a.archived_at ? "Restore" : "Archive"} onClick={async () => {
+            await archive({ data: { id, archived: !a.archived_at } });
+            toast.success(a.archived_at ? "Restored" : "Archived");
+            qc.invalidateQueries();
+          }} />
+          <ActionButton icon={Trash2} label="Delete" onClick={() => setConfirmDelete(true)} destructive />
+        </aside>
+      </div>
+
+      <EditDialog
+        open={editing}
+        onOpenChange={setEditing}
+        assignment={a}
+        onSave={async (patch) => {
+          try {
+            await update({ data: { id, ...patch } });
+            toast.success("Saved");
+            qc.invalidateQueries();
+            setEditing(false);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Failed");
+          }
+        }}
+      />
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the assignment, its roadmap, and AI logs. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={async () => {
+                await del({ data: { id } });
+                toast.success("Deleted");
+                navigate({ to: "/assignments" });
+              }}
+            >Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
-function Stat({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-}) {
+function Stat({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
@@ -184,4 +254,129 @@ function Stat({
       <p className="mt-2 text-xl font-semibold tracking-tight">{value}</p>
     </div>
   );
+}
+
+function ActionButton({ icon: Icon, label, onClick, highlight, destructive }: { icon: React.ComponentType<{ className?: string }>; label: string; onClick: () => void; highlight?: boolean; destructive?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-sm transition ${
+        highlight ? "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10" :
+        destructive ? "border-border bg-card text-destructive hover:bg-destructive/5" :
+        "border-border bg-card hover:bg-secondary"
+      }`}
+    >
+      <Icon className="h-4 w-4" /> {label}
+    </button>
+  );
+}
+
+type EditableAssignment = {
+  title: string;
+  subject: string | null;
+  deadline: string | null;
+  description: string | null;
+  notes: string | null;
+  priority: string | null;
+  difficulty: string | null;
+  estimated_hours: number | null;
+  tags: string[] | null;
+};
+
+function EditDialog({ open, onOpenChange, assignment, onSave }: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  assignment: EditableAssignment;
+  onSave: (patch: Partial<EditableAssignment>) => Promise<void>;
+}) {
+  const [title, setTitle] = useState(assignment.title);
+  const [subject, setSubject] = useState(assignment.subject ?? "");
+  const [deadline, setDeadline] = useState(assignment.deadline ? toLocal(assignment.deadline) : "");
+  const [description, setDescription] = useState(assignment.description ?? "");
+  const [notes, setNotes] = useState(assignment.notes ?? "");
+  const [priority, setPriority] = useState(assignment.priority ?? "Medium");
+  const [difficulty, setDifficulty] = useState(assignment.difficulty ?? "Medium");
+  const [hours, setHours] = useState(String(assignment.estimated_hours ?? ""));
+  const [tags, setTags] = useState<string[]>((assignment.tags ?? []) as string[]);
+  const [tagInput, setTagInput] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Edit assignment</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <Row label="Title"><input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></Row>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Row label="Subject"><input value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></Row>
+            <Row label="Deadline"><input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></Row>
+            <Row label="Priority">
+              <select value={priority} onChange={(e) => setPriority(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                {["Low", "Medium", "High"].map((p) => <option key={p}>{p}</option>)}
+              </select>
+            </Row>
+            <Row label="Difficulty">
+              <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                {["Easy", "Medium", "Hard"].map((p) => <option key={p}>{p}</option>)}
+              </select>
+            </Row>
+            <Row label="Estimated hours"><input type="number" min={0} step={0.5} value={hours} onChange={(e) => setHours(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></Row>
+          </div>
+          <Row label="Description"><textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></Row>
+          <Row label="Notes"><textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /></Row>
+          <Row label="Tags">
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map((t) => (
+                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs">
+                  {t}<button onClick={() => setTags(tags.filter((x) => x !== t))} className="text-muted-foreground">×</button>
+                </span>
+              ))}
+              <input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); const t = tagInput.trim(); if (t && !tags.includes(t)) setTags([...tags, t]); setTagInput(""); }
+              }} placeholder="Add…" className="rounded-full border border-dashed border-border bg-transparent px-2 py-0.5 text-xs outline-none" />
+            </div>
+          </Row>
+        </div>
+        <DialogFooter>
+          <button onClick={() => onOpenChange(false)} className="rounded-full border border-border bg-background px-4 py-2 text-sm">Cancel</button>
+          <button
+            disabled={saving}
+            onClick={async () => {
+              setSaving(true);
+              await onSave({
+                title,
+                subject: subject || null,
+                deadline: deadline ? new Date(deadline).toISOString() : null,
+                description: description || null,
+                notes: notes || null,
+                priority,
+                difficulty,
+                estimated_hours: hours ? Number(hours) : null,
+                tags,
+              });
+              setSaving(false);
+            }}
+            className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >Save changes</button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{label}</label>
+      <div className="mt-1.5">{children}</div>
+    </div>
+  );
+}
+
+function toLocal(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
+  } catch { return ""; }
 }
