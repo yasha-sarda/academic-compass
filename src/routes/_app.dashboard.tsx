@@ -8,7 +8,7 @@ import {
   Compass,
   Target,
   Zap,
-  Map,
+  Map as MapIcon,
   Upload,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -266,7 +266,7 @@ function RoadmapCard({ groups }: { groups: Array<[string, { title: string; total
       </div>
       {groups.length === 0 ? (
         <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
-          <Map className="h-4 w-4" /> No roadmap generated yet.
+          <MapIcon className="h-4 w-4" /> No roadmap generated yet.
         </div>
       ) : (
         <ul className="mt-4 space-y-3">
