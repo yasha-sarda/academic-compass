@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { toggleMilestone } from "@/lib/assignments.functions";
-import { ChevronDown, ChevronRight, Map, Undo2, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, Map as MapIcon, Undo2, Check } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
