@@ -49,6 +49,7 @@ export type Database = {
       assignments: {
         Row: {
           archived_at: string | null
+          completed_at: string | null
           confidence: number | null
           created_at: string
           deadline: string | null
@@ -74,6 +75,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          completed_at?: string | null
           confidence?: number | null
           created_at?: string
           deadline?: string | null
@@ -99,6 +101,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          completed_at?: string | null
           confidence?: number | null
           created_at?: string
           deadline?: string | null
@@ -193,6 +196,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          branch: string | null
+          college: string | null
+          course: string | null
           created_at: string
           daily_study_hours: number | null
           email: string | null
@@ -203,8 +209,12 @@ export type Database = {
           semester: string | null
           subjects: string[] | null
           university: string | null
+          updated_at: string
         }
         Insert: {
+          branch?: string | null
+          college?: string | null
+          course?: string | null
           created_at?: string
           daily_study_hours?: number | null
           email?: string | null
@@ -215,8 +225,12 @@ export type Database = {
           semester?: string | null
           subjects?: string[] | null
           university?: string | null
+          updated_at?: string
         }
         Update: {
+          branch?: string | null
+          college?: string | null
+          course?: string | null
           created_at?: string
           daily_study_hours?: number | null
           email?: string | null
@@ -227,6 +241,7 @@ export type Database = {
           semester?: string | null
           subjects?: string[] | null
           university?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

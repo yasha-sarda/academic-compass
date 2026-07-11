@@ -36,7 +36,7 @@ function priorityTone(p: string | null) {
 }
 
 function AssignmentsIndex() {
-  const [tab, setTab] = useState<"active" | "archived">("active");
+  const [tab, setTab] = useState<"active" | "completed" | "archived">("active");
   const qc = useQueryClient();
   const archiveFn = useServerFn(setArchive);
   const deleteFn = useServerFn(deleteAssignment);
@@ -45,8 +45,14 @@ function AssignmentsIndex() {
   const query = useQuery({
     queryKey: ["assignments-list", tab],
     queryFn: async () => {
-      const q = supabase.from("assignments").select("*").order("created_at", { ascending: false });
-      const { data, error } = await (tab === "active" ? q.is("archived_at", null) : q.not("archived_at", "is", null));
+      let q = supabase.from("assignments").select("*").order("created_at", { ascending: false });
+      if (tab === "archived") {
+        q = q.not("archived_at", "is", null);
+      } else {
+        q = q.is("archived_at", null);
+        q = tab === "completed" ? q.eq("status", "completed") : q.neq("status", "completed");
+      }
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
@@ -87,7 +93,7 @@ function AssignmentsIndex() {
       </div>
 
       <div className="mt-6 inline-flex rounded-full border border-border bg-card p-1 text-xs">
-        {(["active", "archived"] as const).map((t) => (
+        {(["active", "completed", "archived"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)} className={`rounded-full px-3 py-1.5 capitalize transition ${tab === t ? "bg-secondary font-medium text-foreground" : "text-muted-foreground"}`}>
             {t}
           </button>

@@ -11,7 +11,8 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/compass/$chatId")({
   head: () => ({ meta: [{ title: "Compass — Academic Compass" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({ seed: typeof s.seed === "string" ? s.seed : undefined }),
+  validateSearch: (s: Record<string, unknown>): { seed?: string } =>
+    typeof s.seed === "string" ? { seed: s.seed } : {},
   component: ChatPage,
 });
 

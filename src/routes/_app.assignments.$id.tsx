@@ -2,9 +2,29 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { updateAssignment, setArchive, deleteAssignment } from "@/lib/assignments.functions";
+import {
+  updateAssignment,
+  setArchive,
+  deleteAssignment,
+  regenerateRoadmap,
+  setAssignmentStatus,
+} from "@/lib/assignments.functions";
 import { createChat } from "@/lib/compass.functions";
-import { ArrowLeft, Brain, Clock, Compass, Edit, Target, Zap, Map, Archive, Trash2, MessageSquare } from "lucide-react";
+import {
+  ArrowLeft,
+  Brain,
+  CheckCircle2,
+  Clock,
+  Edit,
+  Target,
+  Zap,
+  Map as MapIcon,
+  Archive,
+  Trash2,
+  MessageSquare,
+  RefreshCw,
+  RotateCcw,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -38,10 +58,14 @@ function AssignmentDetail() {
   const update = useServerFn(updateAssignment);
   const archive = useServerFn(setArchive);
   const del = useServerFn(deleteAssignment);
+  const regen = useServerFn(regenerateRoadmap);
+  const setStatus = useServerFn(setAssignmentStatus);
   const newChat = useServerFn(createChat);
 
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmRegen, setConfirmRegen] = useState(false);
+  const [regenLoading, setRegenLoading] = useState(false);
 
   const query = useQuery({
     queryKey: ["assignment", id],
@@ -79,12 +103,39 @@ function AssignmentDetail() {
   const skills = (a.skills_required ?? []) as string[];
   const tags = (a.tags ?? []) as string[];
 
+  const isCompleted = a.status === "completed";
+  const criticalFields: Array<keyof EditableAssignment> = ["deadline", "priority", "difficulty", "description"];
+
   async function askCompass() {
     try {
       const res = await newChat({ data: { assignment_id: id, title: `About: ${a!.title}` } });
-      navigate({ to: "/compass/$chatId", params: { chatId: res.id } });
+      navigate({ to: "/compass/$chatId", params: { chatId: res.id }, search: {} });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to start chat");
+    }
+  }
+
+  async function onRegenerate() {
+    setRegenLoading(true);
+    try {
+      await regen({ data: { id } });
+      toast.success("Roadmap regenerated");
+      qc.invalidateQueries();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setRegenLoading(false);
+      setConfirmRegen(false);
+    }
+  }
+
+  async function toggleCompleted() {
+    try {
+      await setStatus({ data: { id, status: isCompleted ? "in_progress" : "completed" } });
+      toast.success(isCompleted ? "Moved to active" : "Marked completed");
+      qc.invalidateQueries();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
     }
   }
 
@@ -163,7 +214,7 @@ function AssignmentDetail() {
             <section className="mt-6 rounded-2xl border border-border bg-card p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                  <Map className="h-3.5 w-3.5 text-primary" /> Roadmap preview
+                  <MapIcon className="h-3.5 w-3.5 text-primary" /> Roadmap preview
                 </div>
                 <Link to="/roadmaps" className="text-xs text-primary hover:underline">Open in Roadmaps</Link>
               </div>
@@ -192,9 +243,16 @@ function AssignmentDetail() {
         {/* Quick actions */}
         <aside className="space-y-2 lg:sticky lg:top-6 lg:h-fit">
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Quick actions</p>
+          <ActionButton
+            icon={isCompleted ? RotateCcw : CheckCircle2}
+            label={isCompleted ? "Move back to active" : "Mark as completed"}
+            onClick={toggleCompleted}
+            highlight={!isCompleted}
+          />
           <ActionButton icon={Edit} label="Edit assignment" onClick={() => setEditing(true)} />
-          <ActionButton icon={Map} label="View roadmap" onClick={() => navigate({ to: "/roadmaps" })} />
-          <ActionButton icon={MessageSquare} label="Ask Compass" onClick={askCompass} highlight />
+          <ActionButton icon={MapIcon} label="View roadmap" onClick={() => navigate({ to: "/roadmaps", search: { assignment: id } })} />
+          <ActionButton icon={RefreshCw} label="Regenerate roadmap" onClick={() => setConfirmRegen(true)} />
+          <ActionButton icon={MessageSquare} label="Ask Compass" onClick={askCompass} />
           <ActionButton icon={Archive} label={a.archived_at ? "Restore" : "Archive"} onClick={async () => {
             await archive({ data: { id, archived: !a.archived_at } });
             toast.success(a.archived_at ? "Restored" : "Archived");
@@ -214,11 +272,37 @@ function AssignmentDetail() {
             toast.success("Saved");
             qc.invalidateQueries();
             setEditing(false);
+            // If a critical field changed, ask about regenerating the roadmap
+            const changedCritical = criticalFields.some((k) => {
+              const before = (a as unknown as Record<string, unknown>)[k];
+              const after = (patch as unknown as Record<string, unknown>)[k];
+              return after !== undefined && after !== before;
+            });
+            if (changedCritical && (query.data?.milestones.length ?? 0) > 0) {
+              setConfirmRegen(true);
+            }
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Failed");
           }
         }}
       />
+
+      <AlertDialog open={confirmRegen} onOpenChange={setConfirmRegen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>This assignment has changed.</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like Compass to regenerate the roadmap? Existing milestones and progress will be replaced.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep existing roadmap</AlertDialogCancel>
+            <AlertDialogAction onClick={onRegenerate} disabled={regenLoading}>
+              {regenLoading ? "Generating…" : "Generate new roadmap"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
