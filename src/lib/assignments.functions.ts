@@ -357,7 +357,7 @@ export const setAssignmentStatus = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-  });
+
 
 // Regenerate roadmap for an assignment: delete existing milestones and re-analyze from stored context
 export const regenerateRoadmap = createServerFn({ method: "POST" })
