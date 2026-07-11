@@ -330,7 +330,11 @@ export const setAssignmentStatus = createServerFn({ method: "POST" })
     return o;
   })
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: {
+      status: string;
+      completed_at: string | null;
+      progress: number;
+    } = { status: data.status, completed_at: null, progress: 0 };
     if (data.status === "completed") {
       patch.completed_at = new Date().toISOString();
       patch.progress = 100;
@@ -340,7 +344,6 @@ export const setAssignmentStatus = createServerFn({ method: "POST" })
         .eq("assignment_id", data.id);
     } else {
       patch.completed_at = null;
-      // Recompute progress from milestones
       const { data: ms } = await context.supabase.from("roadmaps").select("completed").eq("assignment_id", data.id);
       const total = ms?.length ?? 0;
       const done = (ms ?? []).filter((r) => r.completed).length;
@@ -353,6 +356,7 @@ export const setAssignmentStatus = createServerFn({ method: "POST" })
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
   });
 
 // Regenerate roadmap for an assignment: delete existing milestones and re-analyze from stored context
