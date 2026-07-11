@@ -243,9 +243,16 @@ function AssignmentDetail() {
         {/* Quick actions */}
         <aside className="space-y-2 lg:sticky lg:top-6 lg:h-fit">
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Quick actions</p>
+          <ActionButton
+            icon={isCompleted ? RotateCcw : CheckCircle2}
+            label={isCompleted ? "Move back to active" : "Mark as completed"}
+            onClick={toggleCompleted}
+            highlight={!isCompleted}
+          />
           <ActionButton icon={Edit} label="Edit assignment" onClick={() => setEditing(true)} />
-          <ActionButton icon={Map} label="View roadmap" onClick={() => navigate({ to: "/roadmaps" })} />
-          <ActionButton icon={MessageSquare} label="Ask Compass" onClick={askCompass} highlight />
+          <ActionButton icon={MapIcon} label="View roadmap" onClick={() => navigate({ to: "/roadmaps", search: { assignment: id } })} />
+          <ActionButton icon={RefreshCw} label="Regenerate roadmap" onClick={() => setConfirmRegen(true)} />
+          <ActionButton icon={MessageSquare} label="Ask Compass" onClick={askCompass} />
           <ActionButton icon={Archive} label={a.archived_at ? "Restore" : "Archive"} onClick={async () => {
             await archive({ data: { id, archived: !a.archived_at } });
             toast.success(a.archived_at ? "Restored" : "Archived");
@@ -265,11 +272,37 @@ function AssignmentDetail() {
             toast.success("Saved");
             qc.invalidateQueries();
             setEditing(false);
+            // If a critical field changed, ask about regenerating the roadmap
+            const changedCritical = criticalFields.some((k) => {
+              const before = (a as unknown as Record<string, unknown>)[k];
+              const after = (patch as unknown as Record<string, unknown>)[k];
+              return after !== undefined && after !== before;
+            });
+            if (changedCritical && (query.data?.milestones.length ?? 0) > 0) {
+              setConfirmRegen(true);
+            }
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Failed");
           }
         }}
       />
+
+      <AlertDialog open={confirmRegen} onOpenChange={setConfirmRegen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>This assignment has changed.</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like Compass to regenerate the roadmap? Existing milestones and progress will be replaced.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep existing roadmap</AlertDialogCancel>
+            <AlertDialogAction onClick={onRegenerate} disabled={regenLoading}>
+              {regenLoading ? "Generating…" : "Generate new roadmap"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
