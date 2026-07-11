@@ -49,7 +49,11 @@ function CompassIndex() {
   async function startNew(seedPrompt?: string) {
     try {
       const res = await newChat({ data: { title: seedPrompt ?? "New chat" } });
-      navigate({ to: "/compass/$chatId", params: { chatId: res.id }, search: seedPrompt ? { seed: seedPrompt } : undefined });
+      navigate({
+        to: "/compass/$chatId",
+        params: { chatId: res.id },
+        search: seedPrompt ? { seed: seedPrompt } : {},
+      });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     }
