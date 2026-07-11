@@ -214,7 +214,7 @@ function AssignmentDetail() {
             <section className="mt-6 rounded-2xl border border-border bg-card p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                  <Map className="h-3.5 w-3.5 text-primary" /> Roadmap preview
+                  <MapIcon className="h-3.5 w-3.5 text-primary" /> Roadmap preview
                 </div>
                 <Link to="/roadmaps" className="text-xs text-primary hover:underline">Open in Roadmaps</Link>
               </div>
