@@ -305,15 +305,102 @@ export const toggleMilestone = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("roadmaps").update({ completed: data.completed }).eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    // Recompute assignment progress
     const { data: all } = await context.supabase.from("roadmaps").select("completed").eq("assignment_id", m.assignment_id);
     if (all && all.length) {
       const done = all.filter((r) => r.completed).length;
       const pct = Math.round((done / all.length) * 100);
       await context.supabase
         .from("assignments")
-        .update({ progress: pct, status: pct >= 100 ? "completed" : "in_progress" })
+        .update({
+          progress: pct,
+          status: pct >= 100 ? "completed" : pct > 0 ? "in_progress" : "pending",
+          completed_at: pct >= 100 ? new Date().toISOString() : null,
+        })
         .eq("id", m.assignment_id);
     }
     return { ok: true };
   });
+
+// Set assignment status (mark completed, restore to active)
+export const setAssignmentStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => {
+    const o = data as { id: string; status: "pending" | "in_progress" | "completed" };
+    if (!o?.id || !o.status) throw new Error("id and status required");
+    return o;
+  })
+  .handler(async ({ data, context }) => {
+    const patch: Record<string, unknown> = { status: data.status };
+    if (data.status === "completed") {
+      patch.completed_at = new Date().toISOString();
+      patch.progress = 100;
+      await context.supabase
+        .from("roadmaps")
+        .update({ completed: true })
+        .eq("assignment_id", data.id);
+    } else {
+      patch.completed_at = null;
+      // Recompute progress from milestones
+      const { data: ms } = await context.supabase.from("roadmaps").select("completed").eq("assignment_id", data.id);
+      const total = ms?.length ?? 0;
+      const done = (ms ?? []).filter((r) => r.completed).length;
+      patch.progress = total ? Math.round((done / total) * 100) : 0;
+    }
+    const { error } = await context.supabase
+      .from("assignments")
+      .update(patch)
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Regenerate roadmap for an assignment: delete existing milestones and re-analyze from stored context
+export const regenerateRoadmap = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => {
+    const o = data as { id: string };
+    if (!o?.id) throw new Error("id required");
+    return o;
+  })
+  .handler(async ({ data, context }) => {
+    const { data: a, error } = await context.supabase
+      .from("assignments")
+      .select("*")
+      .eq("id", data.id)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (error || !a) throw new Error(error?.message ?? "Assignment not found");
+
+    const input: ExtractInput = {
+      title: a.title,
+      subject: a.subject,
+      deadline: a.deadline,
+      notes: a.notes,
+      source_type: (a.source_type as ExtractInput["source_type"]) ?? "text",
+      source_text: a.source_text,
+      file_url: a.file_url,
+      file_name: null,
+    };
+    const analysis = (await callLovableAi(input)) ?? fallbackAnalysis(input);
+
+    // Replace milestones
+    await context.supabase.from("roadmaps").delete().eq("assignment_id", data.id);
+    const rows = analysis.milestones.map((m, i) => ({
+      assignment_id: data.id,
+      step: m.title,
+      description: m.description,
+      estimated_time: m.estimated_time,
+      order_index: i,
+    }));
+    if (rows.length) await context.supabase.from("roadmaps").insert(rows);
+
+    // Reset progress
+    await context.supabase
+      .from("assignments")
+      .update({ progress: 0, status: "pending", completed_at: null })
+      .eq("id", data.id);
+
+    return { ok: true, count: rows.length };
+  });
+
