@@ -58,21 +58,14 @@ function AssignmentDetail() {
   const update = useServerFn(updateAssignment);
   const archive = useServerFn(setArchive);
   const del = useServerFn(deleteAssignment);
+  const regen = useServerFn(regenerateRoadmap);
+  const setStatus = useServerFn(setAssignmentStatus);
   const newChat = useServerFn(createChat);
-
-  const [editing, setEditing] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmRegen, setConfirmRegen] = useState(false);
   const [regenLoading, setRegenLoading] = useState(false);
-  const update = useServerFn(updateAssignment);
-  const archive = useServerFn(setArchive);
-  const del = useServerFn(deleteAssignment);
-  const regen = useServerFn(regenerateRoadmap);
-  const setStatus = useServerFn(setAssignmentStatus);
-  const newChat = useServerFn(createChat);
 
   const query = useQuery({
     queryKey: ["assignment", id],
