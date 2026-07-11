@@ -93,7 +93,7 @@ function AssignmentsIndex() {
       </div>
 
       <div className="mt-6 inline-flex rounded-full border border-border bg-card p-1 text-xs">
-        {(["active", "archived"] as const).map((t) => (
+        {(["active", "completed", "archived"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)} className={`rounded-full px-3 py-1.5 capitalize transition ${tab === t ? "bg-secondary font-medium text-foreground" : "text-muted-foreground"}`}>
             {t}
           </button>
