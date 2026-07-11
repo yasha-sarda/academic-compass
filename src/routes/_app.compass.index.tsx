@@ -97,7 +97,7 @@ function CompassIndex() {
           <ul className="mt-3 space-y-2">
             {chats.data!.map((c) => (
               <li key={c.id} className="group flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 transition hover:border-primary/40">
-                <Link to="/compass/$chatId" params={{ chatId: c.id }} className="flex flex-1 items-center gap-3">
+                <Link to="/compass/$chatId" params={{ chatId: c.id }} search={{}} className="flex flex-1 items-center gap-3">
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
                   <span className="truncate text-sm">{c.title}</span>
                 </Link>
