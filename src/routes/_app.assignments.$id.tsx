@@ -2,9 +2,29 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { updateAssignment, setArchive, deleteAssignment } from "@/lib/assignments.functions";
+import {
+  updateAssignment,
+  setArchive,
+  deleteAssignment,
+  regenerateRoadmap,
+  setAssignmentStatus,
+} from "@/lib/assignments.functions";
 import { createChat } from "@/lib/compass.functions";
-import { ArrowLeft, Brain, Clock, Compass, Edit, Target, Zap, Map, Archive, Trash2, MessageSquare } from "lucide-react";
+import {
+  ArrowLeft,
+  Brain,
+  CheckCircle2,
+  Clock,
+  Edit,
+  Target,
+  Zap,
+  Map as MapIcon,
+  Archive,
+  Trash2,
+  MessageSquare,
+  RefreshCw,
+  RotateCcw,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { toast } from "sonner";
