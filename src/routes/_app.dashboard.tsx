@@ -85,9 +85,8 @@ function Dashboard() {
     },
   });
 
-  const assignments = query.data ?? [];
+  const assignments = (query.data ?? []).filter((a) => a.status !== "completed");
   const recommended = [...assignments]
-    .filter((a) => a.status !== "completed")
     .sort((a, b) => scoreAssignment(b) - scoreAssignment(a))[0];
   const upcoming = [...assignments]
     .filter((a) => a.deadline)
