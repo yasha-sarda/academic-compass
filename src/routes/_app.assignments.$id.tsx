@@ -103,12 +103,39 @@ function AssignmentDetail() {
   const skills = (a.skills_required ?? []) as string[];
   const tags = (a.tags ?? []) as string[];
 
+  const isCompleted = a.status === "completed";
+  const criticalFields: Array<keyof EditableAssignment> = ["deadline", "priority", "difficulty", "description"];
+
   async function askCompass() {
     try {
       const res = await newChat({ data: { assignment_id: id, title: `About: ${a!.title}` } });
-      navigate({ to: "/compass/$chatId", params: { chatId: res.id } });
+      navigate({ to: "/compass/$chatId", params: { chatId: res.id }, search: {} });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to start chat");
+    }
+  }
+
+  async function onRegenerate() {
+    setRegenLoading(true);
+    try {
+      await regen({ data: { id } });
+      toast.success("Roadmap regenerated");
+      qc.invalidateQueries();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setRegenLoading(false);
+      setConfirmRegen(false);
+    }
+  }
+
+  async function toggleCompleted() {
+    try {
+      await setStatus({ data: { id, status: isCompleted ? "in_progress" : "completed" } });
+      toast.success(isCompleted ? "Moved to active" : "Marked completed");
+      qc.invalidateQueries();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
     }
   }
 
