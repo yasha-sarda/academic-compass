@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export type AiAnalysis = {
   title: string;
   summary: string;
+  detected_subject?: string | null;
   difficulty: "Easy" | "Medium" | "Hard";
   estimated_hours: number;
   priority: "Low" | "Medium" | "High";
@@ -50,11 +51,12 @@ function fallbackAnalysis(input: ExtractInput): AiAnalysis {
   return {
     title,
     summary: `${title} appears to be a ${difficulty.toLowerCase()} ${input.subject ?? "coursework"} task. Focus on scoping requirements first, then execute in short deep-work blocks.`,
+    detected_subject: input.subject ?? null,
     difficulty,
     estimated_hours,
     priority,
-    confidence: 0.72,
-    reasoning: `Based on the ${input.source_type} source${input.deadline ? ` and a ${daysToDeadline}-day window` : ""}, a ${priority.toLowerCase()}-priority ${difficulty.toLowerCase()} workload is likely.`,
+    confidence: 0.5,
+    reasoning: `Compass could not fully read the source, so this is a heuristic estimate based on the ${input.source_type} you provided${input.deadline ? ` and a ${daysToDeadline}-day window` : ""}.`,
     deliverables:
       difficulty === "Hard"
         ? ["Written report", "Supporting artifacts", "Presentation"]
@@ -77,42 +79,97 @@ function fallbackAnalysis(input: ExtractInput): AiAnalysis {
   };
 }
 
-async function callLovableAi(input: ExtractInput): Promise<AiAnalysis | null> {
+type FileAttachment = { mime: string; base64: string; name: string };
+
+async function callLovableAi(
+  input: ExtractInput,
+  attachment: FileAttachment | null,
+): Promise<AiAnalysis | null> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) return null;
-  const system = `You are Compass, an academic copilot. Analyze the student's assignment and return STRICT JSON matching this TypeScript type:
-{ "title": string, "summary": string, "difficulty": "Easy"|"Medium"|"Hard", "estimated_hours": number, "priority": "Low"|"Medium"|"High", "confidence": number (0-1), "reasoning": string, "deliverables": string[], "skills_required": string[], "tags": string[], "deadline_candidates": string[] (ISO datetimes you detect, empty if none), "milestones": {"title": string, "description": string, "estimated_time": string}[] }
-Return ONLY JSON, no prose.`;
-  const userPayload = {
-    provided_title: input.title,
-    subject: input.subject,
-    deadline: input.deadline,
-    notes: input.notes,
-    source_type: input.source_type,
-    file_name: input.file_name,
-    content: input.source_text?.slice(0, 8000) ?? null,
-  };
+
+  const today = new Date().toISOString();
+  const system = `You are Compass, an AI academic copilot. You will receive an assignment brief (as a PDF, image, or pasted text). Read the entire document carefully and UNDERSTAND what the assignment is actually asking — do not just echo raw text.
+
+Extract as much information as you can confidently identify: assignment title, subject, course/module code, deadline (interpret natural phrases like "submit before next Monday" using today's date ${today}), a clear description of the task, individual questions or sections, instructions, marks/weightage, submission method, important notes, key topics/keywords, and any technologies mentioned.
+
+Then estimate the workload realistically for a university student.
+
+Return STRICT JSON matching this TypeScript type — no markdown, no prose:
+{
+  "title": string,                                    // concise, human-readable assignment title
+  "detected_subject": string | null,                  // subject / course name if you can tell
+  "summary": string,                                  // multi-paragraph description of what the assignment is about, what needs to be done, structured sections/questions, marks, submission method, and important notes. Use short headings prefixed with "## " where helpful.
+  "difficulty": "Easy"|"Medium"|"Hard",
+  "estimated_hours": number,
+  "priority": "Low"|"Medium"|"High",
+  "confidence": number,                               // 0-1, how confident you are you actually understood the document
+  "reasoning": string,                                // 1-3 sentence explanation of your effort/priority estimate
+  "deliverables": string[],                           // concrete artifacts the student must submit
+  "skills_required": string[],
+  "tags": string[],                                   // keywords/topics/technologies detected in the brief
+  "deadline_candidates": string[],                    // ISO 8601 datetimes for every deadline you detect, in priority order (best guess first). Empty array if none.
+  "milestones": { "title": string, "description": string, "estimated_time": string }[]  // 4-7 concrete steps that make a realistic roadmap for this SPECIFIC assignment
+}
+
+If the document is unreadable or clearly not an academic assignment, still return valid JSON with your best-effort fields and a low confidence value.`;
+
+  const userTextParts: string[] = [];
+  if (input.title) userTextParts.push(`Student-provided title: ${input.title}`);
+  if (input.subject) userTextParts.push(`Student-selected subject: ${input.subject}`);
+  if (input.deadline) userTextParts.push(`Student-provided deadline (ISO): ${input.deadline}`);
+  if (input.notes) userTextParts.push(`Student notes: ${input.notes}`);
+  if (input.source_text) userTextParts.push(`Assignment text:\n${input.source_text.slice(0, 20000)}`);
+  if (attachment) userTextParts.push(`An assignment ${attachment.mime.startsWith("image/") ? "image" : "document"} is attached — read it end-to-end before analyzing.`);
+  if (userTextParts.length === 0) userTextParts.push("Analyze the attached assignment.");
+
+  const contentBlocks: Array<Record<string, unknown>> = [
+    { type: "text", text: userTextParts.join("\n\n") },
+  ];
+
+  if (attachment) {
+    if (attachment.mime.startsWith("image/")) {
+      contentBlocks.push({
+        type: "image_url",
+        image_url: { url: `data:${attachment.mime};base64,${attachment.base64}` },
+      });
+    } else if (attachment.mime === "application/pdf") {
+      contentBlocks.push({
+        type: "file",
+        file: {
+          filename: attachment.name,
+          file_data: `data:application/pdf;base64,${attachment.base64}`,
+        },
+      });
+    }
+  }
+
   try {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
       body: JSON.stringify({
-        model: "openai/gpt-5.5",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: system },
-          { role: "user", content: JSON.stringify(userPayload) },
+          { role: "user", content: contentBlocks },
         ],
         response_format: { type: "json_object" },
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      console.error("[compass] gateway non-OK", res.status, txt.slice(0, 400));
+      return null;
+    }
     const json = await res.json();
     const content = json?.choices?.[0]?.message?.content;
     if (!content) return null;
     const parsed = JSON.parse(content) as Partial<AiAnalysis>;
     return {
-      title: parsed.title ?? input.title ?? "Untitled",
+      title: parsed.title?.trim() || input.title || "Untitled",
       summary: parsed.summary ?? "",
+      detected_subject: parsed.detected_subject ?? input.subject ?? null,
       difficulty: (parsed.difficulty as AiAnalysis["difficulty"]) ?? "Medium",
       estimated_hours: Number(parsed.estimated_hours ?? 4),
       priority: (parsed.priority as AiAnalysis["priority"]) ?? "Medium",
@@ -130,6 +187,40 @@ Return ONLY JSON, no prose.`;
   }
 }
 
+async function loadAttachment(
+  supabase: { storage: { from: (b: string) => { download: (p: string) => Promise<{ data: Blob | null; error: unknown }> } } },
+  input: ExtractInput,
+): Promise<FileAttachment | null> {
+  if (!input.file_url) return null;
+  if (input.source_type !== "pdf" && input.source_type !== "image") return null;
+  try {
+    const { data, error } = await supabase.storage.from("assignments").download(input.file_url);
+    if (error || !data) {
+      console.error("[compass] download failed", error);
+      return null;
+    }
+    const buf = await data.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    // Base64 encode in chunks to avoid stack overflow
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    const base64 = btoa(binary);
+    const inferredMime =
+      input.source_type === "pdf"
+        ? "application/pdf"
+        : /\.png$/i.test(input.file_name ?? "")
+          ? "image/png"
+          : "image/jpeg";
+    return { mime: inferredMime, base64, name: input.file_name ?? "assignment" };
+  } catch (err) {
+    console.error("[compass] attachment error", err);
+    return null;
+  }
+}
+
 // STEP 1: Extract (does NOT save)
 export const extractAssignment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -137,8 +228,9 @@ export const extractAssignment = createServerFn({ method: "POST" })
     if (!isExtractInput(data)) throw new Error("Invalid input");
     return data;
   })
-  .handler(async ({ data }) => {
-    const analysis = (await callLovableAi(data)) ?? fallbackAnalysis(data);
+  .handler(async ({ data, context }) => {
+    const attachment = await loadAttachment(context.supabase, data);
+    const analysis = (await callLovableAi(data, attachment)) ?? fallbackAnalysis(data);
     return { analysis };
   });
 
@@ -279,7 +371,6 @@ export const deleteAssignment = createServerFn({ method: "POST" })
     return o;
   })
   .handler(async ({ data, context }) => {
-    // Explicit cleanup (in case cascade not set on ai_logs)
     await context.supabase.from("roadmaps").delete().eq("assignment_id", data.id);
     await context.supabase.from("ai_logs").delete().eq("assignment_id", data.id);
     const { error } = await context.supabase.from("assignments").delete().eq("id", data.id).eq("user_id", context.userId);
@@ -358,7 +449,6 @@ export const setAssignmentStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-
 // Regenerate roadmap for an assignment: delete existing milestones and re-analyze from stored context
 export const regenerateRoadmap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -386,9 +476,9 @@ export const regenerateRoadmap = createServerFn({ method: "POST" })
       file_url: a.file_url,
       file_name: null,
     };
-    const analysis = (await callLovableAi(input)) ?? fallbackAnalysis(input);
+    const attachment = await loadAttachment(context.supabase, input);
+    const analysis = (await callLovableAi(input, attachment)) ?? fallbackAnalysis(input);
 
-    // Replace milestones
     await context.supabase.from("roadmaps").delete().eq("assignment_id", data.id);
     const rows = analysis.milestones.map((m, i) => ({
       assignment_id: data.id,
@@ -399,7 +489,6 @@ export const regenerateRoadmap = createServerFn({ method: "POST" })
     }));
     if (rows.length) await context.supabase.from("roadmaps").insert(rows);
 
-    // Reset progress
     await context.supabase
       .from("assignments")
       .update({ progress: 0, status: "pending", completed_at: null })
@@ -407,4 +496,3 @@ export const regenerateRoadmap = createServerFn({ method: "POST" })
 
     return { ok: true, count: rows.length };
   });
-

@@ -32,6 +32,21 @@ function SettingsPage() {
           })}
         </div>
       </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-card p-6">
+        <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Support</h2>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Contact us at{" "}
+          <a href="mailto:compass.queries@gmail.com" className="font-medium text-primary hover:underline">
+            compass.queries@gmail.com
+          </a>{" "}
+          for any issues or feedback.
+        </p>
+        <div className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">Academic Compass</p>
+          <p className="mt-0.5">Version 1.0.0 (MVP)</p>
+        </div>
+      </section>
     </div>
   );
 }
