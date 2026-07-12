@@ -1,7 +1,7 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Loader2, Plus, X, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Plus, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/onboarding")({
@@ -91,6 +91,12 @@ function OnboardingPage() {
   return (
     <div className="min-h-screen bg-background px-6 py-16">
       <div className="mx-auto max-w-xl">
+        <Link
+          to="/"
+          className="mb-8 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back to home
+        </Link>
         <div className="flex items-center gap-2">
           {[1, 2, 3].map((n) => (
             <div

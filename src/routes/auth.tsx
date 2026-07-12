@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
-import { Compass, Loader2 } from "lucide-react";
+import { ArrowLeft, Compass, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — Academic Compass" },
-      { name: "description", content: "Sign in to Academic Compass." },
+      { name: "description", content: "Sign in to Academic Compass with Google." },
     ],
   }),
   component: AuthPage,
@@ -30,10 +30,6 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   async function redirectAfterAuth(userId: string) {
@@ -44,35 +40,6 @@ function AuthPage() {
       .maybeSingle();
     if (profile?.onboarding_completed) navigate({ to: "/dashboard", replace: true });
     else navigate({ to: "/onboarding", replace: true });
-  }
-
-  async function handleEmail(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email || !password) return;
-    setLoading(true);
-    try {
-      if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        if (!data.session) {
-          toast.success("Check your email to confirm your account.");
-          return;
-        }
-        if (data.user) await redirectAfterAuth(data.user.id);
-      } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        if (data.user) await redirectAfterAuth(data.user.id);
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function handleGoogle() {
@@ -104,13 +71,9 @@ function AuthPage() {
         </Link>
 
         <div className="rounded-2xl border border-border bg-card p-8">
-          <h1 className="text-xl font-semibold tracking-tight">
-            {mode === "signin" ? "Welcome back" : "Create your account"}
-          </h1>
+          <h1 className="text-xl font-semibold tracking-tight">Welcome to Compass</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin"
-              ? "Sign in to continue to Compass."
-              : "Start letting Compass plan your semester."}
+            Sign in with Google to plan your semester with Compass.
           </p>
 
           <button
@@ -122,48 +85,17 @@ function AuthPage() {
             Continue with Google
           </button>
 
-          <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="h-px flex-1 bg-border" /> or <div className="h-px flex-1 bg-border" />
-          </div>
-
-          <form onSubmit={handleEmail} className="space-y-3">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@university.edu"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-            >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {mode === "signin" ? "Sign in" : "Create account"}
-            </button>
-          </form>
-
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            {mode === "signin" ? "New to Compass?" : "Already have an account?"}{" "}
-            <button
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-              className="font-medium text-primary hover:underline"
-            >
-              {mode === "signin" ? "Create an account" : "Sign in"}
-            </button>
+            By continuing you agree to Compass's terms and privacy notice.
           </p>
         </div>
+
+        <Link
+          to="/"
+          className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground transition hover:text-foreground"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back to home
+        </Link>
       </div>
     </div>
   );

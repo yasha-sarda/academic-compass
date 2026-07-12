@@ -145,6 +145,7 @@ function UploadPage() {
       setAnalysis(a);
       const initialDeadline = deadline || a.deadline_candidates[0] || "";
       setSelectedDeadline(initialDeadline ? toLocalDatetime(initialDeadline) : "");
+      if (!subject && a.detected_subject) setSubject(a.detected_subject);
       setStep("review");
       setProcessing(false);
       toast.success("Compass has your first read");
