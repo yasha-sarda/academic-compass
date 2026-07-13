@@ -55,7 +55,9 @@ function AppShell() {
   const navigate = useNavigate();
 
   async function handleSignOut() {
+    analytics.userLoggedOut();
     await supabase.auth.signOut();
+    resetAnalytics();
     navigate({ to: "/", replace: true });
   }
 
