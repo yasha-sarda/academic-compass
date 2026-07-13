@@ -8,6 +8,7 @@ import { ArrowLeft, Send, Compass, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
+import { analytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_app/compass/$chatId")({
   head: () => ({ meta: [{ title: "Compass — Academic Compass" }] }),

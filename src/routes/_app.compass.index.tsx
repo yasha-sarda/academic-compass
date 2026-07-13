@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { createChat, deleteChat, renameChat } from "@/lib/compass.functions";
 import { MessageSquare, Plus, MoreHorizontal, Trash2, Edit3, Compass } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { analytics } from "@/lib/analytics";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,11 @@ function CompassIndex() {
   const del = useServerFn(deleteChat);
   const rename = useServerFn(renameChat);
   const [renaming, setRenaming] = useState<{ id: string; title: string } | null>(null);
+
+  useEffect(() => {
+    analytics.compassOpened();
+  }, []);
+
 
   const chats = useQuery({
     queryKey: ["chats"],
