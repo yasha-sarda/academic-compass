@@ -128,10 +128,47 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  // Initialize PostHog once on the client.
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  // Track pageviews on client-side route changes.
+  useEffect(() => {
+    capturePageview();
+  }, [pathname]);
 
   useEffect(() => {
+    async function syncIdentity() {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, university, branch, semester, onboarding_completed")
+        .eq("id", user.id)
+        .maybeSingle();
+      identifyUser({
+        user_id: user.id,
+        email: user.email ?? null,
+        full_name: profile?.full_name ?? null,
+        university: profile?.university ?? null,
+        branch: (profile as { branch?: string | null } | null)?.branch ?? null,
+        year_of_study: profile?.semester ?? null,
+        onboarding_completed: profile?.onboarding_completed ?? null,
+      });
+    }
+    // Initial identity check on mount.
+    syncIdentity();
+
     const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        syncIdentity();
+        router.invalidate();
+      } else if (event === "SIGNED_OUT") {
+        resetAnalytics();
         router.invalidate();
       }
     });
