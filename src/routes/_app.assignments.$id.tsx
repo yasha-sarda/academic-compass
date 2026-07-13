@@ -280,6 +280,11 @@ function AssignmentDetail() {
         onSave={async (patch) => {
           try {
             await update({ data: { id, ...patch } });
+            analytics.assignmentEdited({
+              assignment_id: id,
+              subject: (patch.subject ?? a?.subject) ?? null,
+              fields_changed: Object.keys(patch),
+            });
             toast.success("Saved");
             qc.invalidateQueries();
             setEditing(false);
@@ -329,6 +334,10 @@ function AssignmentDetail() {
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={async () => {
                 await del({ data: { id } });
+                analytics.assignmentDeleted({
+                  assignment_id: id,
+                  subject: a?.subject ?? null,
+                });
                 toast.success("Deleted");
                 navigate({ to: "/assignments" });
               }}
