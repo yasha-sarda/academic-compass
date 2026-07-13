@@ -161,9 +161,9 @@ Supporting Metrics
 
 ## Documentation
 
-- Product Book
-- Product Requirements Document (PRD)
-- Agile Delivery & Execution Report
+- [Product Book]([url](https://app.notion.com/p/Academic-Compass-Product-Book-399fd6b16c7a806d96e0f134f27bd4c6?source=copy_link))
+- [Product Requirements Document (PRD)]([url](https://app.notion.com/p/Academic-Compass-Product-Requirements-Document-PRD-399fd6b16c7a8032afc0f806c3103921?source=copy_link))
+- [Agile Delivery & Execution Report]([url](https://app.notion.com/p/Academic-Compass-Agile-Delivery-Execution-Report-39cfd6b16c7a8059b856d5cf9e394f8e?source=copy_link))
   
 ---
 
