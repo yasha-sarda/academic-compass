@@ -16,6 +16,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { extractAssignment, saveAssignment, type AiAnalysis } from "@/lib/assignments.functions";
 import { ProcessingOverlay } from "@/components/processing-overlay";
 import { useQuery } from "@tanstack/react-query";
+import { analytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_app/upload")({
   head: () => ({ meta: [{ title: "Upload assignment — Academic Compass" }] }),
@@ -98,6 +99,12 @@ function UploadPage() {
     if (uploadDisabled) return;
     setProcessing(true);
     setMinWaitDone(false);
+    const startTs = Date.now();
+    analytics.aiAnalysisStarted({
+      subject: subject || null,
+      upload_method: mode,
+      file_type: file?.type ?? null,
+    });
     const minWait = new Promise<void>((resolve) =>
       setTimeout(() => {
         setMinWaitDone(true);
