@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Plus, X, Check } from "lucide-react";
+import { analytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_app/profile")({
   head: () => ({ meta: [{ title: "Profile — Academic Compass" }] }),
@@ -90,6 +91,12 @@ function ProfilePage() {
         })
         .eq("id", u.id);
       if (error) throw error;
+      analytics.profileUpdated({
+        has_college: !!college.trim(),
+        has_course: !!course.trim(),
+        has_branch: !!branch.trim(),
+        subjects_count: subjects.length,
+      });
       toast.success("Profile updated");
       qc.invalidateQueries();
     } catch (e) {

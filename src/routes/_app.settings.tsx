@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useTheme, type Theme } from "@/lib/theme";
 import { Monitor, Moon, Sun } from "lucide-react";
+import { analytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Academic Compass" }] }),
@@ -25,7 +26,7 @@ function SettingsPage() {
           {opts.map(({ v, label, icon: Icon }) => {
             const active = theme === v;
             return (
-              <button key={v} onClick={() => setTheme(v)} className={`flex items-center gap-2 rounded-xl border p-3 text-sm transition ${active ? "border-primary bg-primary/5 text-primary" : "border-border bg-background hover:bg-secondary"}`}>
+              <button key={v} onClick={() => { setTheme(v); analytics.themeChanged({ theme: v }); }} className={`flex items-center gap-2 rounded-xl border p-3 text-sm transition ${active ? "border-primary bg-primary/5 text-primary" : "border-border bg-background hover:bg-secondary"}`}>
                 <Icon className="h-4 w-4" /> {label}
               </button>
             );
