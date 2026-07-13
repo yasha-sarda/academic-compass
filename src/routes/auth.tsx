@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { analytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -35,9 +36,16 @@ function AuthPage() {
   async function redirectAfterAuth(userId: string) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("onboarding_completed")
+      .select("onboarding_completed, created_at")
       .eq("id", userId)
       .maybeSingle();
+    // Distinguish signup (profile <60s old) from repeat login.
+    const isNewUser =
+      profile?.created_at
+        ? Date.now() - new Date(profile.created_at).getTime() < 60_000
+        : true;
+    if (isNewUser) analytics.userSignedUp({ method: "google", user_id: userId });
+    analytics.userLoggedIn({ method: "google", user_id: userId });
     if (profile?.onboarding_completed) navigate({ to: "/dashboard", replace: true });
     else navigate({ to: "/onboarding", replace: true });
   }
