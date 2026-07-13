@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowUpRight,
@@ -12,6 +13,7 @@ import {
   Upload,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { analytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Academic Compass" }] }),
@@ -60,6 +62,10 @@ function buildReason(a: Assignment): string {
 }
 
 function Dashboard() {
+  useEffect(() => {
+    analytics.dashboardViewed();
+  }, []);
+
   const query = useQuery({
     queryKey: ["assignments-active"],
     queryFn: async () => {

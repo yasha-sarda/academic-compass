@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { toggleMilestone, regenerateRoadmap } from "@/lib/assignments.functions";
+import { analytics } from "@/lib/analytics";
 import { Map as MapIcon, Undo2, Check, Loader2, RefreshCw, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -108,6 +109,11 @@ function RoadmapsPage() {
     setRegenLoading(true);
     try {
       await regen({ data: { id: selectedId } });
+      analytics.roadmapRegenerated({
+        assignment_id: selectedId,
+        subject: selected?.subject ?? null,
+        total_tasks_generated: total,
+      });
       toast.success("Roadmap regenerated");
       await qc.invalidateQueries();
     } catch (e) {

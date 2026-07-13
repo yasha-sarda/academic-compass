@@ -16,6 +16,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { extractAssignment, saveAssignment, type AiAnalysis } from "@/lib/assignments.functions";
 import { ProcessingOverlay } from "@/components/processing-overlay";
 import { useQuery } from "@tanstack/react-query";
+import { analytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_app/upload")({
   head: () => ({ meta: [{ title: "Upload assignment — Academic Compass" }] }),
@@ -98,6 +99,12 @@ function UploadPage() {
     if (uploadDisabled) return;
     setProcessing(true);
     setMinWaitDone(false);
+    const startTs = Date.now();
+    analytics.aiAnalysisStarted({
+      subject: subject || null,
+      upload_method: mode,
+      file_type: file?.type ?? null,
+    });
     const minWait = new Promise<void>((resolve) =>
       setTimeout(() => {
         setMinWaitDone(true);
@@ -146,11 +153,22 @@ function UploadPage() {
       const initialDeadline = deadline || a.deadline_candidates[0] || "";
       setSelectedDeadline(initialDeadline ? toLocalDatetime(initialDeadline) : "");
       if (!subject && a.detected_subject) setSubject(a.detected_subject);
+      analytics.aiAnalysisCompleted({
+        subject: subject || a.detected_subject || null,
+        processing_time: Date.now() - startTs,
+        success: true,
+      });
       setStep("review");
       setProcessing(false);
       toast.success("Compass has your first read");
     } catch (err) {
       console.error(err);
+      analytics.aiAnalysisFailed({
+        subject: subject || null,
+        processing_time: Date.now() - startTs,
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
       toast.error(err instanceof Error ? err.message : "Something went wrong");
       setProcessing(false);
     }
@@ -186,6 +204,24 @@ function UploadPage() {
           milestones: analysis.milestones,
         },
       });
+      analytics.assignmentUploaded({
+        assignment_id: result.id,
+        subject: subject || null,
+        assignment_type: analysis.difficulty ?? null,
+        due_date: selectedDeadline ? new Date(selectedDeadline).toISOString() : null,
+        upload_method: mode,
+        file_type: mode === "text" ? "text" : (uploadedFileUrl ? mode : null),
+      });
+      if ((analysis.milestones?.length ?? 0) > 0) {
+        analytics.roadmapGenerated({
+          assignment_id: result.id,
+          subject: subject || null,
+          estimated_study_days: analysis.estimated_hours
+            ? Math.ceil(analysis.estimated_hours / 3)
+            : null,
+          total_tasks_generated: analysis.milestones.length,
+        });
+      }
       toast.success("Saved and roadmap generated");
       navigate({ to: "/assignments/$id", params: { id: result.id } });
     } catch (err) {

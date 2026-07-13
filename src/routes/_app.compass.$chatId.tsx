@@ -8,6 +8,7 @@ import { ArrowLeft, Send, Compass, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
+import { analytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_app/compass/$chatId")({
   head: () => ({ meta: [{ title: "Compass — Academic Compass" }] }),
@@ -52,6 +53,12 @@ function ChatPage() {
     setInput("");
     setSending(true);
     setThinking(true);
+    const startTs = Date.now();
+    analytics.compassMessageSent({
+      conversation_id: chatId,
+      prompt_category: seed ? "quick_prompt" : "freeform",
+      message_length: content.length,
+    });
     // Optimistic: push into cache
     qc.setQueryData(["chat", chatId], (prev: { chat: unknown; messages: Msg[] } | undefined) => {
       if (!prev) return prev;
@@ -59,6 +66,10 @@ function ChatPage() {
     });
     try {
       await send({ data: { chat_id: chatId, content } });
+      analytics.compassResponseGenerated({
+        conversation_id: chatId,
+        processing_time: Date.now() - startTs,
+      });
       await qc.invalidateQueries({ queryKey: ["chat", chatId] });
       await qc.invalidateQueries({ queryKey: ["chats"] });
     } catch (e) {

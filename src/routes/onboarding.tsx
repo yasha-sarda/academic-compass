@@ -1,8 +1,9 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, Loader2, Plus, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { analytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/onboarding")({
   ssr: false,
@@ -34,6 +35,11 @@ function OnboardingPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    analytics.onboardingStarted();
+  }, []);
+
 
   const [fullName, setFullName] = useState("");
   const [university, setUniversity] = useState("");
@@ -79,6 +85,11 @@ function OnboardingPage() {
         })
         .eq("id", userData.user.id);
       if (error) throw error;
+      analytics.onboardingCompleted({
+        year_of_study: semester.trim(),
+        branch: null,
+        university: university.trim(),
+      });
       toast.success("You're all set!");
       navigate({ to: "/dashboard", replace: true });
     } catch (err) {

@@ -10,6 +10,7 @@ import {
   setAssignmentStatus,
 } from "@/lib/assignments.functions";
 import { createChat } from "@/lib/compass.functions";
+import { analytics } from "@/lib/analytics";
 import {
   ArrowLeft,
   Brain,
@@ -119,6 +120,10 @@ function AssignmentDetail() {
     setRegenLoading(true);
     try {
       await regen({ data: { id } });
+      analytics.roadmapRegenerated({
+        assignment_id: id,
+        subject: a?.subject ?? null,
+      });
       toast.success("Roadmap regenerated");
       qc.invalidateQueries();
     } catch (e) {
@@ -132,6 +137,12 @@ function AssignmentDetail() {
   async function toggleCompleted() {
     try {
       await setStatus({ data: { id, status: isCompleted ? "in_progress" : "completed" } });
+      if (!isCompleted) {
+        analytics.assignmentMarkedComplete({
+          assignment_id: id,
+          subject: a?.subject ?? null,
+        });
+      }
       toast.success(isCompleted ? "Moved to active" : "Marked completed");
       qc.invalidateQueries();
     } catch (e) {
@@ -269,6 +280,11 @@ function AssignmentDetail() {
         onSave={async (patch) => {
           try {
             await update({ data: { id, ...patch } });
+            analytics.assignmentEdited({
+              assignment_id: id,
+              subject: (patch.subject ?? a?.subject) ?? null,
+              fields_changed: Object.keys(patch),
+            });
             toast.success("Saved");
             qc.invalidateQueries();
             setEditing(false);
@@ -318,6 +334,10 @@ function AssignmentDetail() {
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={async () => {
                 await del({ data: { id } });
+                analytics.assignmentDeleted({
+                  assignment_id: id,
+                  subject: a?.subject ?? null,
+                });
                 toast.success("Deleted");
                 navigate({ to: "/assignments" });
               }}

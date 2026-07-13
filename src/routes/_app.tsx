@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { analytics, resetAnalytics } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_app")({
   ssr: false,
@@ -54,7 +55,9 @@ function AppShell() {
   const navigate = useNavigate();
 
   async function handleSignOut() {
+    analytics.userLoggedOut();
     await supabase.auth.signOut();
+    resetAnalytics();
     navigate({ to: "/", replace: true });
   }
 
