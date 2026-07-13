@@ -13,6 +13,10 @@ Built using an MVP-first approach, the project demonstrates end-to-end product m
 - [📄 Product Requirements Document (PRD)](https://app.notion.com/p/Academic-Compass-Product-Requirements-Document-PRD-399fd6b16c7a8032afc0f806c3103921?source=copy_link)
 
 - [📋 Agile Delivery & Execution Report](https://app.notion.com/p/Academic-Compass-Agile-Delivery-Execution-Report-39cfd6b16c7a8059b856d5cf9e394f8e?source=copy_link)
+  
+- [📊 Live Product Analytics Dashboard](https://us.posthog.com/shared/0jRLNfOZOcYe8j3O0l-tM7aIsWK-KA)
+
+
 ---
 
 ##  Features
